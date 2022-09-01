@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.3</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.zebra.poc</groupId>
+    <artifactId>client-ms</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>client-ms</name>
+    <description>Demo project for Spring Boot</description>
+    <properties>
+        <java.version>11</java.version>
+        <k8s.version>1.8.0</k8s.version>
+        <reponame>repo/</reponame>
+
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.eclipse.jkube</groupId>
+                <artifactId>kubernetes-maven-plugin</artifactId>
+                <version>${k8s.version}</version>
+                <configuration>
+                    <images>
+                        <image>
+                            <name>${reponame}${project.groupId}.${project.artifactId}:${project.version}</name>
+                            <build>
+                                <from>openjdk:11</from>
+                                <tags>
+                                    <tag>latest</tag>
+                                    <tag>${project.groupId}.${project.artifactId}</tag>
+                                </tags>
+                                <assembly>
+                                    <targetDir>/opt/application</targetDir>
+                                    <layers>
+                                        <layer>
+                                            <id>add-extra-jars</id>
+                                            <!-- As of now we don't have any extra jars -->
+                                            <baseDirectory>${project.basedir}</baseDirectory>
+                                            <fileSets>
+                                                <fileSet>
+                                                    <directory>target/lib</directory>
+                                                    <includes>
+                                                        <include>*.jar</include>
+                                                    </includes>
+                                                    <outputDirectory>lib</outputDirectory>
+                                                </fileSet>
+                                            </fileSets>
+                                        </layer>
+                                    </layers>
+                                </assembly>
+                                <entryPoint>
+                                    <!-- exec form for ENTRYPOINT -->
+                                    <exec>
+                                        <arg>java</arg>
+                                        <arg>-jar</arg>
+                                        <arg>/opt/application/${project.artifactId}-${project.version}.jar</arg>
+                                    </exec>
+                                </entryPoint>
+                            </build>
+                        </image>
+                    </images>
+                </configuration>
+                <!--We can remove the executions. It means that fabric8:resource and fabric8:build will execute during mvn install. We can also add more goal to it. -->
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>resource</goal>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
